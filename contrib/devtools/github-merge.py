@@ -22,6 +22,8 @@ import hashlib
 import subprocess
 import sys
 import json,codecs
+from security import safe_command
+
 try:
     from urllib.request import Request,urlopen
 except:
@@ -94,7 +96,7 @@ def tree_sha512sum(commit='HEAD'):
     files.sort()
     # open connection to git-cat-file in batch mode to request data for all blobs
     # this is much faster than launching it per file
-    p = subprocess.Popen([GIT, 'cat-file', '--batch'], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+    p = safe_command.run(subprocess.Popen, [GIT, 'cat-file', '--batch'], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
     overall = hashlib.sha512()
     for f in files:
         blob = blob_by_name[f]
@@ -213,7 +215,7 @@ def main():
         print("ERROR: Cannot find merge of pull request #%s on %s." % (pull,host_repo), file=stderr)
         sys.exit(3)
     subprocess.check_call([GIT,'checkout','-q',base_branch])
-    subprocess.call([GIT,'branch','-q','-D',local_merge_branch], stderr=devnull)
+    safe_command.run(subprocess.call, [GIT,'branch','-q','-D',local_merge_branch], stderr=devnull)
     subprocess.check_call([GIT,'checkout','-q','-b',local_merge_branch])
 
     try:
@@ -263,7 +265,7 @@ def main():
 
         # Run test command if configured.
         if testcmd:
-            if subprocess.call(testcmd,shell=True):
+            if safe_command.run(subprocess.call, testcmd,shell=True):
                 print("ERROR: Running %s failed." % testcmd,file=stderr)
                 sys.exit(5)
 
@@ -284,7 +286,7 @@ def main():
             print("Type 'exit' when done.",file=stderr)
             if os.path.isfile('/etc/debian_version'): # Show pull number on Debian default prompt
                 os.putenv('debian_chroot',pull)
-            subprocess.call([BASH,'-i'])
+            safe_command.run(subprocess.call, [BASH,'-i'])
 
         second_sha512 = tree_sha512sum()
         if first_sha512 != second_sha512:
@@ -310,11 +312,11 @@ def main():
         subprocess.check_call([GIT,'reset','-q','--hard',local_merge_branch])
     finally:
         # Clean up temporary branches.
-        subprocess.call([GIT,'checkout','-q',branch])
-        subprocess.call([GIT,'branch','-q','-D',head_branch],stderr=devnull)
-        subprocess.call([GIT,'branch','-q','-D',base_branch],stderr=devnull)
-        subprocess.call([GIT,'branch','-q','-D',merge_branch],stderr=devnull)
-        subprocess.call([GIT,'branch','-q','-D',local_merge_branch],stderr=devnull)
+        safe_command.run(subprocess.call, [GIT,'checkout','-q',branch])
+        safe_command.run(subprocess.call, [GIT,'branch','-q','-D',head_branch],stderr=devnull)
+        safe_command.run(subprocess.call, [GIT,'branch','-q','-D',base_branch],stderr=devnull)
+        safe_command.run(subprocess.call, [GIT,'branch','-q','-D',merge_branch],stderr=devnull)
+        safe_command.run(subprocess.call, [GIT,'branch','-q','-D',local_merge_branch],stderr=devnull)
 
     # Push the result.
     while True:

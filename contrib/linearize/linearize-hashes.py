@@ -7,7 +7,6 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
-from __future__ import print_function
 try: # Python 3
     import http.client as httplib
 except ImportError: # Python 2

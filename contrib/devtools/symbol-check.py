@@ -16,6 +16,7 @@ import subprocess
 import re
 import sys
 import os
+from security import safe_command
 
 # Debian 6.0.9 (Squeeze) has:
 #
@@ -78,7 +79,7 @@ class CPPFilt(object):
     Use a pipe to the 'c++filt' command.
     '''
     def __init__(self):
-        self.proc = subprocess.Popen(CPPFILT_CMD, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.proc = safe_command.run(subprocess.Popen, CPPFILT_CMD, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def __call__(self, mangled):
         self.proc.stdin.write(mangled + b'\n')
@@ -95,7 +96,7 @@ def read_symbols(executable, imports=True):
     Parse an ELF executable and return a list of (symbol,version) tuples
     for dynamic, imported symbols.
     '''
-    p = subprocess.Popen([READELF_CMD, '--dyn-syms', '-W', executable], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+    p = safe_command.run(subprocess.Popen, [READELF_CMD, '--dyn-syms', '-W', executable], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
     (stdout, stderr) = p.communicate()
     if p.returncode:
         raise IOError('Could not read symbols for %s: %s' % (executable, stderr.strip()))
@@ -123,7 +124,7 @@ def check_version(max_versions, version):
     return ver <= max_versions[lib]
 
 def read_libraries(filename):
-    p = subprocess.Popen([READELF_CMD, '-d', '-W', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+    p = safe_command.run(subprocess.Popen, [READELF_CMD, '-d', '-W', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
     (stdout, stderr) = p.communicate()
     if p.returncode:
         raise IOError('Error opening file')

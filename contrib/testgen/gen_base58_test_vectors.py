@@ -14,8 +14,8 @@ Usage:
 import os
 from itertools import islice
 from base58 import b58encode_chk, b58decode_chk, b58chars
-import random
 from binascii import b2a_hex
+import secrets
 
 # key types
 PUBKEY_ADDRESS = 48
@@ -77,7 +77,7 @@ def gen_invalid_vector(template, corrupt_prefix, randomize_payload_size, corrupt
         prefix = str(bytearray(template[0]))
     
     if randomize_payload_size:
-        payload = os.urandom(max(int(random.expovariate(0.5)), 50))
+        payload = os.urandom(max(int(secrets.SystemRandom().expovariate(0.5)), 50))
     else:
         payload = os.urandom(template[1])
     
@@ -90,7 +90,7 @@ def gen_invalid_vector(template, corrupt_prefix, randomize_payload_size, corrupt
 
 def randbool(p = 0.5):
     '''Return True with P(p)'''
-    return random.random() < p
+    return secrets.SystemRandom().random() < p
 
 def gen_invalid_vectors():
     '''Generate invalid test vectors'''
@@ -105,12 +105,12 @@ def gen_invalid_vectors():
         #   corrupt checksum
         for template in templates:
             val = gen_invalid_vector(template, randbool(0.2), randbool(0.2), randbool(0.2))
-            if random.randint(0,10)<1: # line corruption
+            if secrets.SystemRandom().randint(0,10)<1: # line corruption
                 if randbool(): # add random character to end
-                    val += random.choice(b58chars)
+                    val += secrets.choice(b58chars)
                 else: # replace random character in the middle
-                    n = random.randint(0, len(val))
-                    val = val[0:n] + random.choice(b58chars) + val[n+1:]
+                    n = secrets.SystemRandom().randint(0, len(val))
+                    val = val[0:n] + secrets.choice(b58chars) + val[n+1:]
             if not is_valid(val):
                 yield val,
 
